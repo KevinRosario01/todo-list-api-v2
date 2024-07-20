@@ -4,57 +4,22 @@ import { deleteTodo } from "@/services/deleteTodo";
 import { getTodos } from "@/services/getTodos";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
+import { useTodoList } from "./useTodoList";
 
-const TodoList = ({ user }) => {
-  const todosQuery = useQuery({
-    queryKey: ["todos", user],
-    queryFn: () => getTodos(user),
-  })
-  const [todos, setTodos] = useState([]);
-  const [task, setTask] = useState("");
 
-/*   const loadData = async () => {
-    //Can put username directly
-    const data = await getTodos(user);
-    setTodos(data);
-  };
+export function TodoList() {
+  const todoList = useTodoList();
 
-  useEffect(() => {
-    loadData();
-  }, []); */
 
-  const handleChange = (ev) => {
-    setTask(ev.target.value);
-  };
-
-  const handleAddTodo = async (ev) => {
-    if (ev.key === "Enter" && task.trim() !== "") {
-      const newTodo = await createTodo(user, task.trim());
-      if (newTodo) {
-       // setTodos([...todos, newTodo]);
-        todosQuery.refetch();
-        setTask("");
-      }
+  const handleEnter = (ev) => {
+    if (ev.key === "Enter") {
+      todoList.addTask();
     }
   };
 
-/*   const removeTodo = (index) => {
-    const todo = todos[index];
-    const newTodos = [...todos];
-    newTodos.splice(index, 1);
-    setTodos(newTodos);
-    deleteTodo(todo.id);
-  };
- */
-  const removeTodo = async (index) => {
-    const todo = todosQuery.data?.[index];
-  //  const newTodos = [...todos];
-  //  newTodos.splice(index, 1);
-  //  setTodos(newTodos);
-    await deleteTodo(todo.id);
-    todosQuery.refetch();
-  };
-
+  useEffect(() => {
+    todoList.loadTasks();
+  }, []);
 
   return (
     <div className="bg-gray-100 flex justify-center items-center min-h-screen">
@@ -69,25 +34,25 @@ const TodoList = ({ user }) => {
             className="w-full px-4 py-2 text-xl border-b border-gray-300 focus:outline-none focus:border-pink-500"
             type="text"
             placeholder="Enter Task"
-            value={task}
-            onChange={handleChange}
-            onKeyDown={handleAddTodo}
+            value={todoList.task}
+            onChange={(ev) => todoList.setTask(ev.target.value)}
+            onKeyDown={handleEnter}
           />
           <ul className="mt-6 space-y-2">
-          {todosQuery.isLoading && <div>Loading todos</div>}
-            {todosQuery.data?.length === 0 ? (
+          {todoList.isLoading && <div>Loading todos</div>}
+            {todoList.todos.length === 0 ? (
               <li className="text-gray-500 text-center">
                 No tasks, add a task
               </li>
             ) : (
-              todosQuery.data?.map((todo, index) => (
+              todoList.todos.map((todo, index) => (
                 <li
-                  key={index}
+                  key={todo.id}
                   className="flex justify-between items-center p-2 border-b border-gray-200 group"
                 >
                   <span>{todo.label}</span>
                   <button
-                    onClick={() => removeTodo(index)}
+                    onClick={() => todoList.deleteTask(index)}
                     className="text-gray-400 hover:text-red-600 focus:outline-none opacity-0 group-hover:opacity-100"
                   >
                     &times;
@@ -97,9 +62,9 @@ const TodoList = ({ user }) => {
             )}
           </ul>
           <div className="mt-4 text-gray-600">
-            {todosQuery.data?.length > 0 ? (
+            {todoList.todos.length > 0 ? (
               <span>
-                {todosQuery.data?.length} {todosQuery.data?.length === 1 ? "item" : "items"} left
+                {todoList.todos.length} {todoList.todos.length === 1 ? "item" : "items"} left
               </span>
             ) : (
               <span>No items left</span>
